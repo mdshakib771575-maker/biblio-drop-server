@@ -4,7 +4,6 @@ dns.setServers(['1.1.1.1', '1.0.0.1']);
 const express = require("express");
 const dontenv = require("dotenv");
 const cors = require("cors");
-const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 dontenv.config();
 
