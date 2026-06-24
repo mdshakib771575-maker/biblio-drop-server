@@ -80,6 +80,53 @@ app.patch("/api/deliveries/:id", async (req, res) => {
   }
 });
 
+app.delete("/api/books/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+
+    const result = await bookCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    res.send({
+      success: result.deletedCount > 0,
+      message: "Book deleted successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+
+app.patch("/api/books/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const updatedData = req.body;
+
+    const result = await bookCollection.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: updatedData,
+      }
+    );
+
+    res.send({
+      success: true,
+      result,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
