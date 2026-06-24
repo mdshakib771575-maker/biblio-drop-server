@@ -1,55 +1,101 @@
-const dns = require('node:dns');
-dns.setServers(['1.1.1.1', '1.0.0.1']); 
-
-const express = require("express");
-const dontenv = require("dotenv");
-const cors = require("cors");
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-dontenv.config();
-
-const uri = process.env.MONGODB_URI;
-
+const express = require('express');
 const app = express();
-const PORT = process.env.PORT;
+const cors = require("cors");
+const dotenv = require("dotenv");
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const port = process.env.PORT || 5000;
+dotenv.config(); 
+app.use(cors());
+app.use(express.json())
 
-app.use(
-  cors({
-    credentials: true,
-    origin: [process.env.CLIENT_URL],
-  }),
-);
-app.use(express.json());
+const uri = process.env.MONGODB_URI
 
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  },
+  }
 });
 
 async function run() {
   try {
-    await client.connect();
-    const db = client.db("tech-bazaar");
+  await client.connect();
+   const db = client.db('biblio-drop-db')
+    const bookCollection = db.collection("books");
+    const deliveriCollection = db.collection("deliveries");
 
- 
+
+     app.post('/api/books',async(req,res)=>{
+      // console.log(req.body)
+      const booksData=req.body;
+     const addData = {
+     ...booksData,
+       createdAt: new Date(),
+       status:"Pending Approval",
+        isPublished: false
+
+     }
+     const result = await bookCollection.insertOne(addData)
+     console.log(result)
+     res.send(result)
+    })
+
+    app.get("/api/books", async (req, res) => {
+  const email = req.params.email;
+  console.log(email)
+
+  const result = await bookCollection.find().toArray();
+   console.log(result)
+  res.send(result);
+});
+    app.get("/api/deliveries", async (req, res) => {
+      
+  const result = await deliveriCollection.find().toArray();
+   console.log(result)
+  res.send(result);
+});
+    
+app.patch("/api/deliveries/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { status } = req.body;
+
+    console.log("ID:", id);
+    console.log("Status:", status);
+
+    const result = await deliveriCollection.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          status,
+        },
+      }
+    );
+
+    res.send(result);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send(error.message);
+  }
+});
 
     await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!",
-    );
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
-    // Ensures that the client will close when you finish/error
+    //
     // await client.close();
   }
 }
 run().catch(console.dir);
 
-app.get("/", (req, res) => {
-  res.send("Server is running fine!");
+
+
+app.get('/', (req, res) => {
+  res.send('Hello World!');
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
 });
+
