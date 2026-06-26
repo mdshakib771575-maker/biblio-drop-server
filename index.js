@@ -157,6 +157,31 @@ async function run() {
       }
     });
 
+    app.get("/api/books/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await bookCollection.findOne({
+      _id: new ObjectId(id),
+      isPublished: true, // শুধুমাত্র Published বই দেখাবে
+    });
+
+    if (!result) {
+      return res.status(404).send({
+        success: false,
+        message: "Book not found",
+      });
+    }
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
     app.get("/api/admin/book-approval", async (req, res) => {
       try {
         const result = await bookCollection
