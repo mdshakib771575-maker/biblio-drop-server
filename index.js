@@ -62,22 +62,22 @@ async function run() {
 
 
     app.get("/api/books", async (req, res) => {
-  try {
-    const result = await bookCollection
-      .find({
-        isPublished: true,
-      })
-      .sort({ createdAt: -1 })
-      .toArray();
+      try {
+        const result = await bookCollection
+          .find({
+            isPublished: true,
+          })
+          .sort({ createdAt: -1 })
+          .toArray();
 
-    res.send(result);
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: error.message,
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
     });
-  }
-});
 
     app.get("/api/deliveries", async (req, res) => {
 
@@ -158,29 +158,29 @@ async function run() {
     });
 
     app.get("/api/books/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
+      try {
+        const { id } = req.params;
 
-    const result = await bookCollection.findOne({
-      _id: new ObjectId(id),
-      isPublished: true, // শুধুমাত্র Published বই দেখাবে
+        const result = await bookCollection.findOne({
+          _id: new ObjectId(id),
+          isPublished: true, // শুধুমাত্র Published বই দেখাবে
+        });
+
+        if (!result) {
+          return res.status(404).send({
+            success: false,
+            message: "Book not found",
+          });
+        }
+
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
     });
-
-    if (!result) {
-      return res.status(404).send({
-        success: false,
-        message: "Book not found",
-      });
-    }
-
-    res.send(result);
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: error.message,
-    });
-  }
-});
 
     app.get("/api/admin/book-approval", async (req, res) => {
       try {
@@ -220,6 +220,28 @@ async function run() {
         });
       }
     });
+
+
+
+    app.get("/api/librarian/overview/:email", async (req, res) => {
+      try {
+        const { email } = req.params;
+
+        const totalBooks = await bookCollection.countDocuments({
+          ownerEmail: email,
+        });
+
+        res.send({
+          totalBooks,
+        });
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+    
 
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
