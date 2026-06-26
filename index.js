@@ -296,6 +296,53 @@ async function run() {
       }
     });
 
+    // user overView total Red books / total pending
+   app.get("/api/user/overview/:email", async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    const totalBooksRead = await deliveriCollection.countDocuments({
+      userEmail: email,
+      status: "Delivered",
+    });
+
+    const pendingDeliveries = await deliveriCollection.countDocuments({
+      userEmail: email,
+      status: "Pending",
+    });
+
+    // পরে totalSpent যোগ করবে
+
+    res.send({
+      totalBooksRead,
+      pendingDeliveries,
+    });
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+});
+
+// user Delevery history
+app.get("/api/user/reading-list/:email", async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    const result = await deliveryCollection
+      .find({
+        userEmail: email,
+        status: "Delivered",
+      })
+      .toArray();
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
 
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
