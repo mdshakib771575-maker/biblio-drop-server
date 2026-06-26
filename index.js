@@ -85,7 +85,7 @@ async function run() {
       console.log(result)
       res.send(result);
     });
-
+  // Librarian delevary, displad
     app.patch("/api/deliveries/:id", async (req, res) => {
       try {
         const id = req.params.id;
@@ -109,7 +109,7 @@ async function run() {
         res.status(500).send(error.message);
       }
     });
-
+  //  books delete 
     app.delete("/api/books/:id", async (req, res) => {
       try {
         const id = req.params.id;
@@ -132,7 +132,7 @@ async function run() {
       }
     });
 
-
+    // Librain updata btn click
     app.patch("/api/books/:id", async (req, res) => {
       try {
         const id = req.params.id;
@@ -157,6 +157,7 @@ async function run() {
       }
     });
 
+  // all published book 
     app.get("/api/books/:id", async (req, res) => {
       try {
         const { id } = req.params;
@@ -182,6 +183,7 @@ async function run() {
       }
     });
 
+// admin book appval 
     app.get("/api/admin/book-approval", async (req, res) => {
       try {
         const result = await bookCollection
@@ -198,6 +200,7 @@ async function run() {
       }
     });
 
+    //  admin book appeove click
     app.patch("/api/admin/book-approval/:id", async (req, res) => {
       try {
         const { id } = req.params;
@@ -222,7 +225,7 @@ async function run() {
     });
 
 
-  // total book liberin overView
+    // total book liberin overView
     app.get("/api/librarian/overview/:email", async (req, res) => {
       try {
         const { email } = req.params;
@@ -241,34 +244,57 @@ async function run() {
         });
       }
     });
-//barchart 
+    //barchart 
     app.get("/api/librarian/chart/:email", async (req, res) => {
-  try {
-    const { email } = req.params;
+      try {
+        const { email } = req.params;
 
-    const result = await bookCollection
-      .aggregate([
-        {
-          $match: {
-            ownerEmail: email,
-          },
-        },
-        {
-          $group: {
-            _id: "$category",
-            total: { $sum: 1 },
-          },
-        },
-      ])
-      .toArray();
+        const result = await bookCollection
+          .aggregate([
+            {
+              $match: {
+                ownerEmail: email,
+              },
+            },
+            {
+              $group: {
+                _id: "$category",
+                total: { $sum: 1 },
+              },
+            },
+          ])
+          .toArray();
 
-    res.send(result);
-  } catch (error) {
-    res.status(500).send({
-      message: error.message,
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          message: error.message,
+        });
+      }
     });
-  }
-});
+
+    // user book detail requent deleberyBtn click
+    app.post("/api/deliveries", async (req, res) => {
+      try {
+        const deliveryData = req.body;
+
+        const result = await deliveriCollection.insertOne({
+          ...deliveryData,
+          requestDate: new Date(),
+          status: "Pending",
+        });
+
+        res.send({
+          success: true,
+          insertedId: result.insertedId,
+        });
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
 
 
     await client.db("admin").command({ ping: 1 });
