@@ -222,7 +222,7 @@ async function run() {
     });
 
 
-
+  // total book liberin overView
     app.get("/api/librarian/overview/:email", async (req, res) => {
       try {
         const { email } = req.params;
@@ -241,7 +241,35 @@ async function run() {
         });
       }
     });
-    
+//barchart 
+    app.get("/api/librarian/chart/:email", async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    const result = await bookCollection
+      .aggregate([
+        {
+          $match: {
+            ownerEmail: email,
+          },
+        },
+        {
+          $group: {
+            _id: "$category",
+            total: { $sum: 1 },
+          },
+        },
+      ])
+      .toArray();
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({
+      message: error.message,
+    });
+  }
+});
+
 
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
