@@ -24,6 +24,7 @@ async function run() {
     const db = client.db('biblio-drop-db')
     const bookCollection = db.collection("books");
     const deliveriCollection = db.collection("deliveries");
+    const reviewCollection = db.collection("reviews");
 
 
     app.post('/api/books', async (req, res) => {
@@ -355,6 +356,27 @@ app.get("/api/user/reading-list/:email", async (req, res) => {
       .toArray();
 
     res.send(result);
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// user add reviews
+app.post("/api/reviews", async (req, res) => {
+  try {
+    const review = req.body;
+
+    review.createdAt = new Date();
+
+    const result = await reviewCollection.insertOne(review);
+
+    res.send({
+      success: true,
+      insertedId: result.insertedId,
+    });
   } catch (error) {
     res.status(500).send({
       success: false,
