@@ -323,15 +323,35 @@ async function run() {
 });
 
 // user Delevery history
+app.get("/api/user/history/:email", async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    const result = await deliveriCollection.find({
+        userEmail: email,
+      })
+      .sort({ requestDate: -1 })
+      .toArray();
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// user reding list
 app.get("/api/user/reading-list/:email", async (req, res) => {
   try {
     const { email } = req.params;
 
-    const result = await deliveryCollection
-      .find({
+    const result = await deliveriCollection.find({
         userEmail: email,
         status: "Delivered",
       })
+      .sort({ requestDate: -1 })
       .toArray();
 
     res.send(result);
