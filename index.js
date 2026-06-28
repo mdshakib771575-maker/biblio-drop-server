@@ -3,10 +3,13 @@ const app = express();
 const cors = require("cors");
 const dotenv = require("dotenv");
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { createRemoteJWKSet, jwtVerify } = require('jose');
 const port = process.env.PORT || 5000;
 dotenv.config();
 app.use(cors());
 app.use(express.json())
+
+
 
 const uri = process.env.MONGODB_URI
 
@@ -18,6 +21,32 @@ const client = new MongoClient(uri, {
   }
 });
 
+// jwt
+const JWKS = createRemoteJWKSet(new URL(`${process.env.CLIENT_URL}/api/auth/jwks`))
+const verifyToken = async (req,res,next)=>{
+  const authHeader = req.headers.authorization;
+  if(!authHeader || !authHeader.startsWith("Bearer")){
+     return res.status(401).json({message:"Unauthorized"})
+  }
+
+  const token = authHeader.split(" ")[1];
+  // console.log(token)
+  if(!token){
+     return res.status(401).json({message:" token Unauthorized"})
+  }
+
+  try{
+
+    const {payload} = await jwtVerify(token,JWKS)
+    console.log(payload)
+    next();
+  }catch(error){
+     console.log(error)
+      return res.status(401).json({message:"Unauthorized"})
+
+  }
+
+}
 async function run() {
   try {
     await client.connect();
@@ -28,21 +57,7 @@ async function run() {
     const userCollection = db.collection("user");
 
 
-    app.post('/api/books', async (req, res) => {
-      // console.log(req.body)
-      const booksData = req.body;
-      console.log("req", req.body)
-      const addData = {
-        ...booksData,
-        createdAt: new Date(),
-        status: "Pending Approval",
-        isPublished: false
-
-      }
-      const result = await bookCollection.insertOne(addData)
-      console.log(result)
-      res.send(result)
-    })
+  
 
 
 
@@ -72,30 +87,6 @@ async function run() {
       console.log(result)
       res.send(result);
     });
-
-    //  books delete 
-    app.delete("/api/books/:id", async (req, res) => {
-      try {
-        const id = req.params.id;
-
-
-        const result = await bookCollection.deleteOne({
-          _id: new ObjectId(id),
-        });
-
-        res.send({
-          success: result.deletedCount > 0,
-          message: "Book deleted successfully",
-        });
-      } catch (error) {
-        console.log(error);
-        res.status(500).send({
-          success: false,
-          message: error.message,
-        });
-      }
-    });
-
 
     // all published book Detais Page
     app.get("/api/books/:id", async (req, res) => {
@@ -189,7 +180,7 @@ async function run() {
     });
 
     // adin manaeUser Update Role btn  Route
-    app.patch("/api/users/:id", async (req, res) => {
+    app.patch("/api/users/:id",verifyToken , async (req, res) => {
       try {
         const { id } = req.params;
         const { role } = req.body;
@@ -219,7 +210,7 @@ async function run() {
     });
 
     // admin manageUser Delete role btn route
-    app.delete("/api/users/:id", async (req, res) => {
+    app.delete("/api/users/:id", verifyToken ,  async (req, res) => {
       try {
         const { id } = req.params;
 
@@ -258,7 +249,7 @@ async function run() {
     });
 
     // admin manage all books status update route
-    app.patch("/api/admin/books/status/:id", async (req, res) => {
+    app.patch("/api/admin/books/status/:id",verifyToken , async (req, res) => {
       try {
         const { id } = req.params;
         const { isPublished } = req.body;
@@ -291,7 +282,7 @@ async function run() {
     });
 
     //admin manage all books detete btn route
-    app.delete("/api/admin/books/:id", async (req, res) => {
+    app.delete("/api/admin/books/:id",verifyToken ,  async (req, res) => {
       try {
         const { id } = req.params;
 
@@ -312,12 +303,111 @@ async function run() {
       }
     });
 
+    // admin overView total user card route
+    app.get("/api/admin/total-users", async (req, res) => {
+  try {
+    const totalUsers = await userCollection.countDocuments();
+
+    res.send({
+      success: true,
+      totalUsers,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// admin overview tolal delevery card route
+app.get("/api/admin/total-deliveries", async (req, res) => {
+  try {
+    const totalDeliveries = await deliveriCollection.countDocuments();
+
+    res.send({
+      success: true,
+      totalDeliveries,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
 
 
 
     //.....................Librarian Route ...............................
 
 
+
+    // Librarian add book route
+      app.post('/api/librarian/books', verifyToken , async (req, res) => {
+      // console.log(req.body)
+      const booksData = req.body;
+      console.log("req", req.body)
+      const addData = {
+        ...booksData,
+        createdAt: new Date(),
+        status: "Pending Approval",
+        isPublished: false
+
+      }
+      const result = await bookCollection.insertOne(addData)
+      console.log(result)
+      res.send(result)
+    })
+
+    
+    // Librain updata btn route
+    app.patch("/api/librarian/books/:id",verifyToken ,  async (req, res) => {
+      try {
+        const id = req.params.id;
+        const updatedData = req.body;
+
+        const result = await bookCollection.updateOne(
+          { _id: new ObjectId(id) },
+          {
+            $set: updatedData,
+          }
+        );
+
+        res.send({
+          success: true,
+          result,
+        });
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+
+      // Librarian book delete btn route
+    app.delete("/api/librarian/books/:id",verifyToken ,  async (req, res) => {
+      try {
+        const id = req.params.id;
+
+
+        const result = await bookCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        res.send({
+          success: result.deletedCount > 0,
+          message: "Book deleted successfully",
+        });
+      } catch (error) {
+        console.log(error);
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
 
     // get librarian api route
     app.get("/api/librarian/books/:email", async (req, res) => {
@@ -386,31 +476,6 @@ async function run() {
       }
     });
 
-    // Librain updata btn click
-    app.patch("/api/books/:id", async (req, res) => {
-      try {
-        const id = req.params.id;
-        const updatedData = req.body;
-
-        const result = await bookCollection.updateOne(
-          { _id: new ObjectId(id) },
-          {
-            $set: updatedData,
-          }
-        );
-
-        res.send({
-          success: true,
-          result,
-        });
-      } catch (error) {
-        res.status(500).send({
-          success: false,
-          message: error.message,
-        });
-      }
-    });
-
     // Librarian delevary, displad
     app.patch("/api/deliveries/:id", async (req, res) => {
       try {
@@ -443,8 +508,8 @@ async function run() {
 
 
 
-    // user book detail requent deleberyBtn click
-    app.post("/api/deliveries", async (req, res) => {
+    // user book request route
+    app.post("/api/deliveries",verifyToken ,  async (req, res) => {
       try {
         const deliveryData = req.body;
 
@@ -534,7 +599,7 @@ async function run() {
     });
 
     // user add reviews
-    app.post("/api/reviews", async (req, res) => {
+    app.post("/api/reviews",verifyToken ,  async (req, res) => {
       try {
         const review = req.body;
 
@@ -576,7 +641,7 @@ async function run() {
     });
 
     // user my-review update btn route
-    app.patch("/api/reviews/:id", async (req, res) => {
+    app.patch("/api/reviews/:id",verifyToken ,  async (req, res) => {
       try {
         const { id } = req.params;
         console.log(req.params);
@@ -607,7 +672,7 @@ async function run() {
     });
 
     // user my-review delete btn route
-    app.delete("/api/reviews/:id", async (req, res) => {
+    app.delete("/api/reviews/:id",verifyToken ,  async (req, res) => {
       try {
         const { id } = req.params;
 
@@ -655,6 +720,7 @@ async function run() {
         });
       }
     });
+
 
 
     await client.db("admin").command({ ping: 1 });
