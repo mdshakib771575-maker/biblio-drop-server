@@ -46,7 +46,7 @@ async function run() {
 
 
 
-    // get all book
+    // get all publish books
     app.get("/api/books", async (req, res) => {
       try {
         const result = await bookCollection
@@ -64,6 +64,7 @@ async function run() {
         });
       }
     });
+
     // get delivery books
     app.get("/api/deliveries", async (req, res) => {
 
@@ -96,7 +97,7 @@ async function run() {
     });
 
 
-    // all published book 
+    // all published book Detais Page
     app.get("/api/books/:id", async (req, res) => {
       try {
         const { id } = req.params;
@@ -187,7 +188,7 @@ async function run() {
       }
     });
 
-    // amin manaeUser Update Role Route
+    // adin manaeUser Update Role btn  Route
     app.patch("/api/users/:id", async (req, res) => {
       try {
         const { id } = req.params;
@@ -216,6 +217,45 @@ async function run() {
         });
       }
     });
+
+    // admin manageUser Delete role btn route
+    app.delete("/api/users/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+
+        const result = await userCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        res.send({
+          success: true,
+          deletedCount: result.deletedCount,
+          message: "User Deleted Successfully",
+        });
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+
+    // admin manage all book route
+   app.get("/api/admin/books", async (req, res) => {
+  try {
+    const result = await bookCollection
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
 
 
 
@@ -342,7 +382,7 @@ async function run() {
     });
 
 
-    
+
 
     // ....................User Route...........................
 
