@@ -257,6 +257,39 @@ async function run() {
   }
 });
 
+// admin manage all books status update route
+
+app.patch("/api/admin/books/status/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isPublished } = req.body;
+
+    const result = await bookCollection.updateOne(
+      {
+        _id: new ObjectId(id),
+      },
+      {
+        $set: {
+          isPublished,
+        },
+      }
+    );
+
+    res.send({
+      success: true,
+      modifiedCount: result.modifiedCount,
+      message: isPublished
+        ? "Book Published Successfully"
+        : "Book Unpublished Successfully",
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
 
 
 
