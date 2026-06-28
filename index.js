@@ -241,54 +241,76 @@ async function run() {
     });
 
     // admin manage all book route
-   app.get("/api/admin/books", async (req, res) => {
-  try {
-    const result = await bookCollection
-      .find({})
-      .sort({ createdAt: -1 })
-      .toArray();
+    app.get("/api/admin/books", async (req, res) => {
+      try {
+        const result = await bookCollection
+          .find({})
+          .sort({ createdAt: -1 })
+          .toArray();
 
-    res.send(result);
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: error.message,
-    });
-  }
-});
-
-// admin manage all books status update route
-
-app.patch("/api/admin/books/status/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { isPublished } = req.body;
-
-    const result = await bookCollection.updateOne(
-      {
-        _id: new ObjectId(id),
-      },
-      {
-        $set: {
-          isPublished,
-        },
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
       }
-    );
+    });
 
-    res.send({
-      success: true,
-      modifiedCount: result.modifiedCount,
-      message: isPublished
-        ? "Book Published Successfully"
-        : "Book Unpublished Successfully",
+    // admin manage all books status update route
+    app.patch("/api/admin/books/status/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { isPublished } = req.body;
+
+        const result = await bookCollection.updateOne(
+          {
+            _id: new ObjectId(id),
+          },
+          {
+            $set: {
+              isPublished: true,
+              status: "Published",
+            }
+          }
+        );
+
+        res.send({
+          success: true,
+          modifiedCount: result.modifiedCount,
+          message: isPublished
+            ? "Book Published Successfully"
+            : "Book Unpublished Successfully",
+        });
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
     });
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: error.message,
+
+    //admin manage all books detete btn route
+    app.delete("/api/admin/books/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+
+        const result = await bookCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        res.send({
+          success: true,
+          deletedCount: result.deletedCount,
+          message: "Book Deleted Successfully",
+        });
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
     });
-  }
-});
 
 
 
