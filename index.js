@@ -25,6 +25,7 @@ async function run() {
     const bookCollection = db.collection("books");
     const deliveriCollection = db.collection("deliveries");
     const reviewCollection = db.collection("reviews");
+    const userCollection = db.collection("user");
 
 
     app.post('/api/books', async (req, res) => {
@@ -43,25 +44,9 @@ async function run() {
       res.send(result)
     })
 
-    app.get("/api/librarian/books/:email", async (req, res) => {
-      try {
-        const { email } = req.params;
-
-        const result = await bookCollection
-          .find({ ownerEmail: email })
-          .toArray();
-
-        res.send(result);
-      } catch (error) {
-        res.status(500).send({
-          success: false,
-          message: error.message,
-        });
-      }
-    });
 
 
-
+    // get all book
     app.get("/api/books", async (req, res) => {
       try {
         const result = await bookCollection
@@ -79,38 +64,15 @@ async function run() {
         });
       }
     });
-
+    // get delivery books
     app.get("/api/deliveries", async (req, res) => {
 
       const result = await deliveriCollection.find().toArray();
       console.log(result)
       res.send(result);
     });
-  // Librarian delevary, displad
-    app.patch("/api/deliveries/:id", async (req, res) => {
-      try {
-        const id = req.params.id;
-        const { status } = req.body;
 
-        console.log("ID:", id);
-        console.log("Status:", status);
-
-        const result = await deliveriCollection.updateOne(
-          { _id: new ObjectId(id) },
-          {
-            $set: {
-              status,
-            },
-          }
-        );
-
-        res.send(result);
-      } catch (error) {
-        console.log(error);
-        res.status(500).send(error.message);
-      }
-    });
-  //  books delete 
+    //  books delete 
     app.delete("/api/books/:id", async (req, res) => {
       try {
         const id = req.params.id;
@@ -133,32 +95,8 @@ async function run() {
       }
     });
 
-    // Librain updata btn click
-    app.patch("/api/books/:id", async (req, res) => {
-      try {
-        const id = req.params.id;
-        const updatedData = req.body;
 
-        const result = await bookCollection.updateOne(
-          { _id: new ObjectId(id) },
-          {
-            $set: updatedData,
-          }
-        );
-
-        res.send({
-          success: true,
-          result,
-        });
-      } catch (error) {
-        res.status(500).send({
-          success: false,
-          message: error.message,
-        });
-      }
-    });
-
-  // all published book 
+    // all published book 
     app.get("/api/books/:id", async (req, res) => {
       try {
         const { id } = req.params;
@@ -184,7 +122,14 @@ async function run() {
       }
     });
 
-// admin book appval 
+
+
+    //...............Admin Route......................... 
+
+
+
+
+    // admin book appval 
     app.get("/api/admin/book-approval", async (req, res) => {
       try {
         const result = await bookCollection
@@ -225,6 +170,77 @@ async function run() {
       }
     });
 
+    // admin manageRser route
+    app.get("/api/users", async (req, res) => {
+      try {
+        const users = await userCollection
+          .find()
+          .sort({ createdAt: -1 })
+          .toArray();
+
+        res.send(users);
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+
+    // amin manaeUser Update Role Route
+    app.patch("/api/users/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { role } = req.body;
+
+        const result = await userCollection.updateOne(
+          {
+            _id: new ObjectId(id),
+          },
+          {
+            $set: {
+              role,
+            },
+          }
+        );
+
+        res.send({
+          success: true,
+          modifiedCount: result.modifiedCount,
+          message: "Role Updated Successfully",
+        });
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+
+
+
+
+    //.....................Librarian Route ...............................
+
+
+
+    // get librarian api route
+    app.get("/api/librarian/books/:email", async (req, res) => {
+      try {
+        const { email } = req.params;
+
+        const result = await bookCollection
+          .find({ ownerEmail: email })
+          .toArray();
+
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
 
     // total book liberin overView
     app.get("/api/librarian/overview/:email", async (req, res) => {
@@ -245,7 +261,8 @@ async function run() {
         });
       }
     });
-    //barchart 
+
+    //barchart Librarian
     app.get("/api/librarian/chart/:email", async (req, res) => {
       try {
         const { email } = req.params;
@@ -274,6 +291,63 @@ async function run() {
       }
     });
 
+    // Librain updata btn click
+    app.patch("/api/books/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const updatedData = req.body;
+
+        const result = await bookCollection.updateOne(
+          { _id: new ObjectId(id) },
+          {
+            $set: updatedData,
+          }
+        );
+
+        res.send({
+          success: true,
+          result,
+        });
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+
+    // Librarian delevary, displad
+    app.patch("/api/deliveries/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const { status } = req.body;
+
+        console.log("ID:", id);
+        console.log("Status:", status);
+
+        const result = await deliveriCollection.updateOne(
+          { _id: new ObjectId(id) },
+          {
+            $set: {
+              status,
+            },
+          }
+        );
+
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send(error.message);
+      }
+    });
+
+
+    
+
+    // ....................User Route...........................
+
+
+
     // user book detail requent deleberyBtn click
     app.post("/api/deliveries", async (req, res) => {
       try {
@@ -298,92 +372,194 @@ async function run() {
     });
 
     // user overView total Red books / total pending
-   app.get("/api/user/overview/:email", async (req, res) => {
-  try {
-    const { email } = req.params;
+    app.get("/api/user/overview/:email", async (req, res) => {
+      try {
+        const { email } = req.params;
 
-    const totalBooksRead = await deliveriCollection.countDocuments({
-      userEmail: email,
-      status: "Delivered",
+        const totalBooksRead = await deliveriCollection.countDocuments({
+          userEmail: email,
+          status: "Delivered",
+        });
+
+        const pendingDeliveries = await deliveriCollection.countDocuments({
+          userEmail: email,
+          status: "Pending",
+        });
+
+        // পরে totalSpent যোগ করবে
+
+        res.send({
+          totalBooksRead,
+          pendingDeliveries,
+        });
+      } catch (error) {
+        res.status(500).send({ message: error.message });
+      }
     });
 
-    const pendingDeliveries = await deliveriCollection.countDocuments({
-      userEmail: email,
-      status: "Pending",
+    // user Delevery history
+    app.get("/api/user/history/:email", async (req, res) => {
+      try {
+        const { email } = req.params;
+
+        const result = await deliveriCollection.find({
+          userEmail: email,
+        })
+          .sort({ requestDate: -1 })
+          .toArray();
+
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
     });
 
-    // পরে totalSpent যোগ করবে
+    // user reding list
+    app.get("/api/user/reading-list/:email", async (req, res) => {
+      try {
+        const { email } = req.params;
 
-    res.send({
-      totalBooksRead,
-      pendingDeliveries,
+        const result = await deliveriCollection.find({
+          userEmail: email,
+          status: "Delivered",
+        })
+          .sort({ requestDate: -1 })
+          .toArray();
+
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
     });
-  } catch (error) {
-    res.status(500).send({ message: error.message });
-  }
-});
 
-// user Delevery history
-app.get("/api/user/history/:email", async (req, res) => {
-  try {
-    const { email } = req.params;
+    // user add reviews
+    app.post("/api/reviews", async (req, res) => {
+      try {
+        const review = req.body;
 
-    const result = await deliveriCollection.find({
-        userEmail: email,
-      })
-      .sort({ requestDate: -1 })
-      .toArray();
+        review.createdAt = new Date();
 
-    res.send(result);
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: error.message,
+        const result = await reviewCollection.insertOne(review);
+
+        res.send({
+          success: true,
+          insertedId: result.insertedId,
+        });
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
     });
-  }
-});
 
-// user reding list
-app.get("/api/user/reading-list/:email", async (req, res) => {
-  try {
-    const { email } = req.params;
+    // user my reviews page route 
+    app.get("/api/user/reviews/:email", async (req, res) => {
+      try {
+        const { email } = req.params;
 
-    const result = await deliveriCollection.find({
-        userEmail: email,
-        status: "Delivered",
-      })
-      .sort({ requestDate: -1 })
-      .toArray();
+        const result = await reviewCollection
+          .find({
+            userEmail: email,
+          })
+          .sort({ createdAt: -1 })
+          .toArray();
 
-    res.send(result);
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: error.message,
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
     });
-  }
-});
 
-// user add reviews
-app.post("/api/reviews", async (req, res) => {
-  try {
-    const review = req.body;
+    // user my-review update btn route
+    app.patch("/api/reviews/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        console.log(req.params);
+        const { rating, comment } = req.body;
 
-    review.createdAt = new Date();
+        const result = await reviewCollection.updateOne(
+          {
+            _id: new ObjectId(id),
+          },
+          {
+            $set: {
+              rating,
+              comment,
+            },
+          }
+        );
 
-    const result = await reviewCollection.insertOne(review);
-
-    res.send({
-      success: true,
-      insertedId: result.insertedId,
+        res.send({
+          success: true,
+          modifiedCount: result.modifiedCount,
+        });
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
     });
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: error.message,
+
+    // user my-review delete btn route
+    app.delete("/api/reviews/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+
+        const result = await reviewCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        res.send({
+          success: true,
+          deletedCount: result.deletedCount,
+        });
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
     });
-  }
-});
+
+    // user overview chart
+    app.get("/api/user/chart/:email", async (req, res) => {
+      try {
+        const { email } = req.params;
+
+        const result = await deliveriCollection.aggregate([
+          {
+            $match: {
+              userEmail: email,
+              status: "Delivered",
+            },
+          },
+          {
+            $group: {
+              _id: "$bookCategory",
+              total: { $sum: 1 },
+            },
+          },
+        ]).toArray();
+
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
 
 
     await client.db("admin").command({ ping: 1 });
