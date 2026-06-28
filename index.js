@@ -84,7 +84,7 @@ async function run() {
     app.get("/api/deliveries", async (req, res) => {
 
       const result = await deliveriCollection.find().toArray();
-      console.log(result)
+      // console.log(result)
       res.send(result);
     });
 
@@ -347,7 +347,7 @@ app.get("/api/admin/total-deliveries", async (req, res) => {
       app.post('/api/librarian/books', verifyToken , async (req, res) => {
       // console.log(req.body)
       const booksData = req.body;
-      console.log("req", req.body)
+      // console.log("req", req.body)
       const addData = {
         ...booksData,
         createdAt: new Date(),
@@ -740,5 +740,5 @@ app.get('/', (req, res) => {
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
-});
+});  
 
