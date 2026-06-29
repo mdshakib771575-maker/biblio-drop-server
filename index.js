@@ -3,7 +3,8 @@ const app = express();
 const cors = require("cors");
 const dotenv = require("dotenv");
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const { createRemoteJWKSet, jwtVerify } = require('jose');
+const { createRemoteJWKSet, jwtVerify } = require('jose-cjs');
+
 const port = process.env.PORT || 5000;
 dotenv.config();
 app.use(cors());
@@ -49,7 +50,7 @@ const verifyToken = async (req,res,next)=>{
 }
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const db = client.db('biblio-drop-db')
     const bookCollection = db.collection("books");
     const deliveriCollection = db.collection("deliveries");
@@ -723,8 +724,8 @@ app.get("/api/admin/total-deliveries", async (req, res) => {
 
 
 
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     //
     // await client.close();
