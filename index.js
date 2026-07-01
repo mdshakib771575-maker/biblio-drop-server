@@ -24,23 +24,23 @@ const client = new MongoClient(uri, {
 
 // jwt
 const JWKS = createRemoteJWKSet(new URL(`${process.env.CLIENT_URL}/api/auth/jwks`))
-const verifyToken = async (req,res,next)=>{
+const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if(!authHeader || !authHeader.startsWith("Bearer")){
-     return res.status(401).json({message:"Unauthorized"})
+  if (!authHeader || !authHeader.startsWith("Bearer")) {
+    return res.status(401).json({ message: "Unauthorized" })
   }
   const token = authHeader.split(" ")[1];
   // console.log(token)
-  if(!token){
-     return res.status(401).json({message:" token Unauthorized"})
+  if (!token) {
+    return res.status(401).json({ message: " token Unauthorized" })
   }
-  try{
-    const {payload} = await jwtVerify(token,JWKS)
+  try {
+    const { payload } = await jwtVerify(token, JWKS)
     // console.log(payload)
     next();
-  }catch(error){
-     console.log(error)
-      return res.status(401).json({message:"Unauthorized"})
+  } catch (error) {
+    console.log(error)
+    return res.status(401).json({ message: "Unauthorized" })
   }
 }
 
@@ -57,24 +57,93 @@ async function run() {
 
 
     // get all publish books
-    app.get("/api/books", async (req, res) => {
-          const {page=1,limit=10}=req.query;
-          const skip =(Number(page)-1)*Number(limit)
-      try {
-        const result = await bookCollection.find({isPublished: true,})
-          .sort({ createdAt: -1 }).skip(skip).limit(Number(limit))
-          .toArray();
-          const totlaData = await bookCollection.countDocuments();
-          const totalPage = Math.ceil(totlaData/Number(limit))
+    // app.get("/api/books", async (req, res) => {
+    //   const { page = 1, limit = 10 } = req.query;
+    //   const skip = (Number(page) - 1) * Number(limit)
+    //   const search = req.query.search;
+    //   const category = req.query.category;
+    //   const author = req.query.author;
+    //   const query ={};
 
-        res.send({data:result,page:Number(page),totalPage});
-      } catch (error) {
-        res.status(500).send({
-          success: false,
-          message: error.message,
-        });
-      }
+    //   if(search){
+    //     query.title={
+    //       $regex:search,
+    //       $options :"i"
+    //     }
+    //   };
+
+    //   if(category){
+    //     query.category = category
+    //   };
+
+    //   if(author){
+    //     query.author = author
+    //   }
+
+    //   try {
+    //     const result = await bookCollection.find({ isPublished: true, })
+    //       .sort({ createdAt: -1 }).skip(skip).limit(Number(limit))
+    //       .toArray();
+    //     const totlaData = await bookCollection.countDocuments();
+    //     const totalPage = Math.ceil(totlaData / Number(limit))
+    //     const filterData = bookCollection.find(query).toArray()
+
+    //     res.send({ data: result, page: Number(page), totalPage,filterData:filterData });
+    //   } catch (error) {
+    //     res.status(500).send({
+    //       success: false,
+    //       message: error.message,
+    //     });
+    //   }
+    // });
+    app.get("/api/books", async (req, res) => {
+  const { page = 1, limit = 10, search, category, author } = req.query;
+
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const query = {
+    isPublished: true,
+  };
+
+  if (search) {
+    query.title = {
+      $regex: search,
+      $options: "i",
+    };
+  }
+
+  if (category) {
+    query.category = category;
+  }
+
+  if (author) {
+    query.author = author;
+  }
+
+  try {
+    const result = await bookCollection
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .toArray();
+
+    const totalData = await bookCollection.countDocuments(query);
+
+    const totalPage = Math.ceil(totalData / Number(limit));
+
+    res.send({
+      data: result,
+      page: Number(page),
+      totalPage,
     });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
+});
 
     // get delivery books
     app.get("/api/deliveries", async (req, res) => {
@@ -176,7 +245,7 @@ async function run() {
     });
 
     // adin manaeUser Update Role btn  Route
-    app.patch("/api/users/:id",verifyToken , async (req, res) => {
+    app.patch("/api/users/:id", verifyToken, async (req, res) => {
       try {
         const { id } = req.params;
         const { role } = req.body;
@@ -206,7 +275,7 @@ async function run() {
     });
 
     // admin manageUser Delete role btn route
-    app.delete("/api/users/:id", verifyToken ,  async (req, res) => {
+    app.delete("/api/users/:id", verifyToken, async (req, res) => {
       try {
         const { id } = req.params;
 
@@ -245,7 +314,7 @@ async function run() {
     });
 
     // admin manage all books status update route
-    app.patch("/api/admin/books/status/:id",verifyToken , async (req, res) => {
+    app.patch("/api/admin/books/status/:id", verifyToken, async (req, res) => {
       try {
         const { id } = req.params;
         const { isPublished } = req.body;
@@ -278,7 +347,7 @@ async function run() {
     });
 
     //admin manage all books detete btn route
-    app.delete("/api/admin/books/:id",verifyToken ,  async (req, res) => {
+    app.delete("/api/admin/books/:id", verifyToken, async (req, res) => {
       try {
         const { id } = req.params;
 
@@ -301,37 +370,37 @@ async function run() {
 
     // admin overView total user card route
     app.get("/api/admin/total-users", async (req, res) => {
-  try {
-    const totalUsers = await userCollection.countDocuments();
+      try {
+        const totalUsers = await userCollection.countDocuments();
 
-    res.send({
-      success: true,
-      totalUsers,
+        res.send({
+          success: true,
+          totalUsers,
+        });
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
     });
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: error.message,
-    });
-  }
-});
 
-// admin overview tolal delevery card route
-app.get("/api/admin/total-deliveries", async (req, res) => {
-  try {
-    const totalDeliveries = await deliveriCollection.countDocuments();
+    // admin overview tolal delevery card route
+    app.get("/api/admin/total-deliveries", async (req, res) => {
+      try {
+        const totalDeliveries = await deliveriCollection.countDocuments();
 
-    res.send({
-      success: true,
-      totalDeliveries,
+        res.send({
+          success: true,
+          totalDeliveries,
+        });
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
     });
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: error.message,
-    });
-  }
-});
 
 
 
@@ -340,7 +409,7 @@ app.get("/api/admin/total-deliveries", async (req, res) => {
 
 
     // Librarian add book route
-      app.post('/api/librarian/books', verifyToken , async (req, res) => {
+    app.post('/api/librarian/books', verifyToken, async (req, res) => {
       // console.log(req.body)
       const booksData = req.body;
       // console.log("req", req.body)
@@ -356,9 +425,9 @@ app.get("/api/admin/total-deliveries", async (req, res) => {
       res.send(result)
     })
 
-    
+
     // Librain updata btn route
-    app.patch("/api/librarian/books/:id",verifyToken ,  async (req, res) => {
+    app.patch("/api/librarian/books/:id", verifyToken, async (req, res) => {
       try {
         const id = req.params.id;
         const updatedData = req.body;
@@ -382,8 +451,8 @@ app.get("/api/admin/total-deliveries", async (req, res) => {
       }
     });
 
-      // Librarian book delete btn route
-    app.delete("/api/librarian/books/:id",verifyToken ,  async (req, res) => {
+    // Librarian book delete btn route
+    app.delete("/api/librarian/books/:id", verifyToken, async (req, res) => {
       try {
         const id = req.params.id;
 
@@ -505,7 +574,7 @@ app.get("/api/admin/total-deliveries", async (req, res) => {
 
 
     // user book request route
-    app.post("/api/deliveries",verifyToken ,  async (req, res) => {
+    app.post("/api/deliveries", verifyToken, async (req, res) => {
       try {
         const deliveryData = req.body;
 
@@ -595,7 +664,7 @@ app.get("/api/admin/total-deliveries", async (req, res) => {
     });
 
     // user add reviews
-    app.post("/api/reviews",verifyToken ,  async (req, res) => {
+    app.post("/api/reviews", verifyToken, async (req, res) => {
       try {
         const review = req.body;
 
@@ -637,7 +706,7 @@ app.get("/api/admin/total-deliveries", async (req, res) => {
     });
 
     // user my-review update btn route
-    app.patch("/api/reviews/:id",verifyToken ,  async (req, res) => {
+    app.patch("/api/reviews/:id", verifyToken, async (req, res) => {
       try {
         const { id } = req.params;
         console.log(req.params);
@@ -668,7 +737,7 @@ app.get("/api/admin/total-deliveries", async (req, res) => {
     });
 
     // user my-review delete btn route
-    app.delete("/api/reviews/:id",verifyToken ,  async (req, res) => {
+    app.delete("/api/reviews/:id", verifyToken, async (req, res) => {
       try {
         const { id } = req.params;
 
@@ -736,5 +805,5 @@ app.get('/', (req, res) => {
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
-});  
+});
 
