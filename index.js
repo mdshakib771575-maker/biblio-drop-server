@@ -29,25 +29,21 @@ const verifyToken = async (req,res,next)=>{
   if(!authHeader || !authHeader.startsWith("Bearer")){
      return res.status(401).json({message:"Unauthorized"})
   }
-
   const token = authHeader.split(" ")[1];
   // console.log(token)
   if(!token){
      return res.status(401).json({message:" token Unauthorized"})
   }
-
   try{
-
     const {payload} = await jwtVerify(token,JWKS)
-    console.log(payload)
+    // console.log(payload)
     next();
   }catch(error){
      console.log(error)
       return res.status(401).json({message:"Unauthorized"})
-
   }
-
 }
+
 async function run() {
   try {
     // await client.connect();
@@ -58,21 +54,20 @@ async function run() {
     const userCollection = db.collection("user");
 
 
-  
-
 
 
     // get all publish books
     app.get("/api/books", async (req, res) => {
+          const {page=1,limit=10}=req.query;
+          const skip =(Number(page)-1)*Number(limit)
       try {
-        const result = await bookCollection
-          .find({
-            isPublished: true,
-          })
-          .sort({ createdAt: -1 })
+        const result = await bookCollection.find({isPublished: true,})
+          .sort({ createdAt: -1 }).skip(skip).limit(Number(limit))
           .toArray();
+          const totlaData = await bookCollection.countDocuments();
+          const totalPage = Math.ceil(totlaData/Number(limit))
 
-        res.send(result);
+        res.send({data:result,page:Number(page),totalPage});
       } catch (error) {
         res.status(500).send({
           success: false,
